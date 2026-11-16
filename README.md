@@ -116,10 +116,10 @@ is a reference copy, not my implementation; inherited workflows are disabled.
 The evaluation suite is linked, not copied or rebranded.
 
 **Validated local-emulator example:** at commit
-[`2a3be89`](https://github.com/gmsuhas/rehearse/commit/2a3be89b993cd8f1d2aef541a4dccd618187a253),
-GitHub [checks run 43930654347](https://github.com/gmsuhas/rehearse/actions/runs/43930654347)
+[`acf9e00`](https://github.com/gmsuhas/rehearse/commit/acf9e008f8073fed98de5295371f4162159a8296),
+GitHub [checks run 43948419745](https://github.com/gmsuhas/rehearse/actions/runs/43948419745)
 passed Python 3.10 and 3.13 unit jobs and a Docker-backed integration against
-AWS Emulator 1.0.471.1. [Eight JSON evidence reports](https://github.com/gmsuhas/rehearse/actions/runs/43930654347/artifacts/14257734264)
+AWS Emulator 1.0.471.1. [Eight JSON evidence reports](https://github.com/gmsuhas/rehearse/actions/runs/43948419745/artifacts/14265952219)
 show the fixed publisher PASS in all five cases and the broken publisher FAIL
 with two objects in the three duplicate/lost-response cases. The job uses no
 real AWS credentials, disables telemetry and binds the emulator to loopback.
