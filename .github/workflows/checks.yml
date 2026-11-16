@@ -1,0 +1,75 @@
+name: checks
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  unit:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.10', '3.13']
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install -e .
+      - run: python -m unittest discover -s tests -v
+  integration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.13'
+      - run: python -m pip install -e .
+      - name: Build pinned official emulator
+        run: docker build -f Dockerfile.emulator -t rehearse-emulator .
+      - name: Start emulator bound to loopback
+        run: |
+          mkdir -p "$HOME/.aws/emulator"
+          docker run -d --name rehearse-emulator --memory=2g --memory-swap=2g \
+            -p 127.0.0.1:9297:9297 -e HOME="$HOME" \
+            -e EMULATOR_TELEMETRY=off \
+            -v "$HOME/.aws/emulator:$HOME/.aws/emulator" \
+            rehearse-emulator -p 9297
+      - name: Wait for generated CA and health
+        run: |
+          python - <<'PY'
+          import pathlib, ssl, time, urllib.request
+          ca = pathlib.Path.home() / '.aws/emulator/9297/ca.pem'
+          for attempt in range(60):
+              if ca.is_file():
+                  try:
+                      with urllib.request.urlopen(
+                          'https://127.0.0.1:9297/__admin/health',
+                          context=ssl.create_default_context(cafile=str(ca)), timeout=2,
+                      ) as response:
+                          if response.status == 200 and response.read().strip() == b'ok':
+                              print('Emulator ready')
+                              break
+                  except (OSError, ssl.SSLError):
+                      pass
+              time.sleep(1)
+          else:
+              raise SystemExit('Emulator did not become ready within 60 seconds')
+          PY
+      - name: Verify real red and green state
+        run: python tests/verify_integration.py
+      - name: Upload evidence and diagnostic logs
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: integration-evidence
+          path: reports/*.json
+          if-no-files-found: ignore
+      - name: Show emulator logs on failure
+        if: failure()
+        run: docker logs rehearse-emulator 2>&1 || true
+      - name: Stop emulator
+        if: always()
+        run: docker stop rehearse-emulator 2>/dev/null || true

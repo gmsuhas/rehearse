@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rehearse-local"
+version = "0.1.0"
+description = "Rehearse lost AWS write responses against a local emulator"
+requires-python = ">=3.10"
+dependencies = ["boto3==1.44.3"]
+
+[project.scripts]
+rehearse = "rehearse.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["rehearse*"]
