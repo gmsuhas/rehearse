@@ -32,7 +32,7 @@ jobs:
       - name: Start emulator bound to loopback
         run: |
           mkdir -p "$HOME/.aws/emulator"
-          docker run -d --name rehearse-emulator --memory=2g --memory-swap=2g \
+          docker run -d --name rehearse-emulator --user "$(id -u):$(id -g)" --memory=2g --memory-swap=2g \
             -p 127.0.0.1:9297:9297 -e HOME="$HOME" \
             -e EMULATOR_TELEMETRY=off \
             -v "$HOME/.aws/emulator:$HOME/.aws/emulator" \
