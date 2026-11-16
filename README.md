@@ -31,7 +31,8 @@ rehearse run --publisher fixed --case lost-s3
 # Expected verdict: PASS, if the emulator supports the required operations.
 ```
 
-These lines describe the expected behavior, not a run captured on this machine.
+These commands show the expected behavior; the hosted run linked below records
+the observed result. I have not run Docker on this Mac.
 The injected timeout is a Python wrapper that forwards the SDK call, sees its
 success, then raises. It models uncertainty at the application boundary; it
 is not a dropped TCP packet and does not test the SDK's internal retry logic.
@@ -114,12 +115,17 @@ The emulator source is AWS's work. [My fork](https://github.com/gmsuhas/aws-emul
 is a reference copy, not my implementation; inherited workflows are disabled.
 The evaluation suite is linked, not copied or rebranded.
 
-**Prototype:** offline tests pass; actual emulator compatibility has not yet
-been validated. The `checks` GitHub Actions workflow runs unit tests on
-Python 3.10 and 3.13 and a Docker-based integration on Ubuntu. It uses a pinned
-official emulator package, no real AWS credentials, telemetry disabled and
-loopback-only ports. Integration asserts the broken publisher fails for the
-expected duplicate-state invariant, not an unrelated setup failure.
+**Validated local-emulator example:** at commit
+[`e4b9f27`](https://github.com/gmsuhas/rehearse/commit/e4b9f27150da9c71c4abe275874be4a268a37c57),
+GitHub [checks run 43930190892](https://github.com/gmsuhas/rehearse/actions/runs/43930190892)
+passed Python 3.10 and 3.13 unit jobs and a Docker-backed integration against
+AWS Emulator 1.0.471.1. [Eight JSON evidence reports](https://github.com/gmsuhas/rehearse/actions/runs/43930190892/artifacts/14257469001)
+show the fixed publisher PASS in all five cases and the broken publisher FAIL
+with two objects in the three duplicate/lost-response cases. The job uses no
+real AWS credentials, disables telemetry and binds the emulator to loopback.
+This is local application-recovery evidence only, not validation on AWS. The
+Docker base image uses a moving tag and the RPM is version-pinned but not
+hash-pinned.
 
 ## Offline tests
 
@@ -129,8 +135,9 @@ python3 -m unittest discover -s tests -v
 
 Offline tests need no boto3, Docker or credentials. They cover the injected
 fault, broken/fixed behavior and evidence aggregation with in-memory fakes.
-They cannot establish AWS Emulator compatibility. Until the integration runs
-on a pinned emulator release, do not publish a green screenshot.
+They cannot establish AWS Emulator compatibility on their own. The separate
+hosted integration run above supplies local-emulator evidence for the version
+tested.
 
 ## Why this sits with otl, ramp and veto
 
